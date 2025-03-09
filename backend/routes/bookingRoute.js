@@ -48,12 +48,12 @@ bookingRoutes.post("/create",authentication,authorisation(["patient"]) , async (
         const transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
-                user: 'kumargunjan1116@gmail.com',
+                user: 'parmarshobhit91@gmail.com',
                 pass: process.env.emailPassword
             }
         });
         const mailOptions = {
-            from: 'kumargunjan1116@gmail.com',
+            from: 'parmarshobhit91@gmail.com',
             to: `${data.userEmail}`,
             subject: 'Booking Confirmation from Rapid fit',
             text: `Your Booking is confirmed on ${data.bookingDate} date.`

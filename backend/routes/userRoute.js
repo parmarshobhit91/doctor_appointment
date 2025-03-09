@@ -44,53 +44,122 @@ userRoute.get("/doctors/specialty/:value",async(req,res)=>{
 })
 
 //Route to add new user(doctor/patient)
-userRoute.post("/register",async(req,res)=>{
-    const {name,email,password,role,specialty,location}=req.body;
+// userRoute.post("/register",async(req,res)=>{
+//     const {name,email,password,role,specialty,location}=req.body;
+
+//     try {
+//         let reqData=await Usermodel.find({email});
+//         if(reqData.length>0){
+//             return res.json({"msg":"You are already register"})
+//         }
+//         bcrypt.hash(password,5,async(err,hash)=>{
+//             if(err){
+//                 console.log("error from hashing password",err);
+//                 res.json({"msg":"error from hashing password"})
+//             }else{
+//                 let registerData=new Usermodel({name,email,password:hash,role,specialty:specialty||"None",location});
+//                 await registerData.save();
+//                 res.json({"msg":"Successfully register"})
+//             }
+//         })
+//     } catch (error) {
+//         console.log("error from register route",error);
+//         res.json({"msg":"error in register a user"})
+//     }
+// })
+userRoute.post("/register", async (req, res) => {
+    const { name, email, password, role, specialty, location } = req.body;
+
+    // Validate required fields
+    if (!name || !email || !password || !location) {
+        return res.status(400).json({ msg: "All required fields must be provided" });
+    }
 
     try {
-        let reqData=await Usermodel.find({email});
-        if(reqData.length>0){
-            return res.json({"msg":"You are already register"})
+        let reqData = await Usermodel.findOne({ email });
+        if (reqData) {
+            return res.status(400).json({ msg: "You are already registered" });
         }
-        bcrypt.hash(password,5,async(err,hash)=>{
-            if(err){
-                console.log("error from hashing password",err);
-                res.json({"msg":"error from hashing password"})
-            }else{
-                let registerData=new Usermodel({name,email,password:hash,role,specialty:specialty||"None",location});
-                await registerData.save();
-                res.json({"msg":"Successfully register"})
-            }
-        })
+
+        let registerData = new Usermodel({
+            name,
+            email,
+            password,  // No hashing applied
+            role,
+            specialty: specialty || "None",
+            location
+        });
+
+        await registerData.save();
+        res.status(201).json({ msg: "Successfully registered" });
+
     } catch (error) {
-        console.log("error from register route",error);
-        res.json({"msg":"error in register a user"})
+        console.log("Error from register route:", error);
+        res.status(500).json({ msg: "Error in registering a user" });
     }
-})
+});
+
+
 
 //Route to login a user(doctor/patient)
-userRoute.post("/login",async(req,res)=>{
-    const {email,password}=req.body;
+// userRoute.post("/login",async(req,res)=>{
+//     const {email,password}=req.body;
+//     try {
+//         let reqData=await Usermodel.find({email});
+//         if(reqData.length==0){
+//             return res.json({"msg":"register first"})
+//         }else{
+//             bcrypt.compare(password,reqData[0].password,async(err,result)=>{
+//                 if(result){
+//                     let token=jwt.sign({userId:reqData[0]._id,role:reqData[0].role,email:reqData[0].email},process.env.Key);
+//                     res.json({"msg":"Login Success","token":token,"role":reqData[0].role,"name":reqData[0].name})
+//                 }else{
+//                     res.json({"msg":"Wrong Credentials"})
+//                 }
+//             })
+//         }
+
+//     } catch (error) {
+//         console.log("error from login route",error);
+//         res.json({"msg":"error in login a user"})
+//     }
+// })
+userRoute.post("/login", async (req, res) => {
+    const { email, password } = req.body;
+
+    // Validate required fields
+    if (!email || !password) {
+        return res.status(400).json({ msg: "Email and password must be provided" });
+    }
+
     try {
-        let reqData=await Usermodel.find({email});
-        if(reqData.length==0){
-            return res.json({"msg":"register first"})
-        }else{
-            bcrypt.compare(password,reqData[0].password,async(err,result)=>{
-                if(result){
-                    let token=jwt.sign({userId:reqData[0]._id,role:reqData[0].role,email:reqData[0].email},process.env.Key);
-                    res.json({"msg":"Login Success","token":token,"role":reqData[0].role,"name":reqData[0].name})
-                }else{
-                    res.json({"msg":"Wrong Credentials"})
-                }
-            })
+        let reqData = await Usermodel.findOne({ email });
+        if (!reqData) {
+            return res.status(400).json({ msg: "Register first" });
         }
 
+        // Direct password comparison (no hashing)
+        if (password !== reqData.password) {
+            return res.status(400).json({ msg: "Wrong Credentials" });
+        }
+
+        let token = jwt.sign(
+            { userId: reqData._id, role: reqData.role, email: reqData.email },
+            process.env.Key
+        );
+
+        res.status(200).json({
+            msg: "Login Success",
+            token: token,
+            role: reqData.role,
+            name: reqData.name
+        });
+
     } catch (error) {
-        console.log("error from login route",error);
-        res.json({"msg":"error in login a user"})
+        console.log("Error from login route:", error);
+        res.status(500).json({ msg: "Error in logging in a user" });
     }
-})
+});
 
 //Route to logout a user(doctor/patient)
 userRoute.get("/logout", (req,res)=>{
